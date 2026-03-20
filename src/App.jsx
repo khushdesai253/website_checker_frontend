@@ -188,7 +188,7 @@ export default function App() {
       setResult(data)
     } catch (err) {
       if (err.message === 'Failed to fetch') {
-        setError('Cannot connect to the checker server. Make sure the backend is running on port 5000.')
+        setError(err)
       } else {
         setError(err.message)
       }
