@@ -38,17 +38,20 @@ body {
   overflow-x: hidden;
 }
 
-/* Background grid effect */
+/* Background grid effect - Replaced by Three.js */
 body::before {
-  content: '';
+  display: none;
+}
+
+.canvas-container {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-image:
-    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-  z-index: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: auto; /* Allow interacting with 3D if needed */
+  background: radial-gradient(circle at center, #0a0e1a 0%, #05070d 100%);
 }
 
 .app {
@@ -57,6 +60,7 @@ body::before {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: transparent;
 }
 
 /* Header */
@@ -65,9 +69,10 @@ body::before {
   display: flex;
   align-items: center;
   gap: 14px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(10, 14, 26, 0.8);
-  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(10, 14, 26, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -182,11 +187,17 @@ body::before {
   position: relative;
   display: flex;
   gap: 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
+  background: rgba(17, 24, 39, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
   padding: 8px 8px 8px 16px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.input-wrapper:hover {
+  background: rgba(17, 24, 39, 0.6);
 }
 
 .input-wrapper.main-url {
@@ -311,13 +322,16 @@ body::before {
 
 /* URL Summary Card */
 .summary-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
   padding: 28px 32px;
   margin-bottom: 24px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .summary-card::before {
@@ -457,19 +471,22 @@ body::before {
 }
 
 .check-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
+  background: rgba(17, 24, 39, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
   padding: 24px;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .check-card:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-light);
-  transform: translateY(-2px);
+  background: rgba(26, 34, 53, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px) scale(1.02);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
@@ -658,19 +675,24 @@ body::before {
 }
 
 .v-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
+  background: rgba(17, 24, 39, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .v-card:hover {
-  background: var(--bg-card-hover);
-  transform: translateY(-2px);
+  background: rgba(26, 34, 53, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
 .v-icon {

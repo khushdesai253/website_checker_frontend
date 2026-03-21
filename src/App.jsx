@@ -1,5 +1,33 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { Stars } from '@react-three/drei'
 import './index.css'
+
+function AnimatedStars() {
+  const ref = useRef()
+
+  useFrame((state, delta) => {
+    ref.current.rotation.x -= delta / 15
+    ref.current.rotation.y -= delta / 20
+  })
+
+  return (
+    <group ref={ref}>
+      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+    </group>
+  )
+}
+
+function Background3D() {
+  return (
+    <div className="canvas-container">
+      <Canvas camera={{ position: [0, 0, 5] }}>
+        <ambientLight intensity={0.5} />
+        <AnimatedStars />
+      </Canvas>
+    </div>
+  )
+}
 
 const CHECK_META = {
   home: {
@@ -155,7 +183,8 @@ export default function App() {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [legalName, setLegalName] = useState('')
-  
+  const [phone, setPhone] = useState('')
+
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -168,19 +197,27 @@ export default function App() {
     setResult(null)
 
     try {
-      const resp = await fetch('https://website-checker-backend-rv7b.onrender.com/api/check', {
+      const resp = await fetch('http://localhost:5000/api/waba-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           url: url.trim(),
           email: email.trim(),
           displayName: displayName.trim(),
-          legalName: legalName.trim()
+          legalName: legalName.trim(),
+          phone: phone.trim()
         })
       })
 
       if (!resp.ok) {
         const err = await resp.json()
+        if (err.validationErrors) {
+          const fieldLabels = { url: 'URL', email: 'Email', displayName: 'Display Name', legalName: 'Legal Name', phone: 'Phone' }
+          const messages = Object.entries(err.validationErrors)
+            .map(([field, msg]) => `${fieldLabels[field] || field}: ${msg}`)
+            .join('\n')
+          throw new Error(messages)
+        }
         throw new Error(err.error || 'Server error')
       }
 
@@ -188,7 +225,7 @@ export default function App() {
       setResult(data)
     } catch (err) {
       if (err.message === 'Failed to fetch') {
-        setError(err)
+        setError('Cannot connect to the checker server. Make sure the backend is running on port 5000.')
       } else {
         setError(err.message)
       }
@@ -206,206 +243,230 @@ export default function App() {
   const scoreClass = ScoreColor(score)
 
   return (
-    <div className="app">
-      {/* Header */}
-      <header className="header">
-        <div className="logo-icon">🔍</div>
-        <div className="header-text">
-          <h1>WebSite Checker</h1>
-          <p>Analyze any website for compliance & key pages</p>
-        </div>
-      </header>
-
-      {/* Main */}
-      <main className="main-content">
-        {/* Hero */}
-        <section className="hero">
-          <div className="hero-badge">Deep Analysis & Verification</div>
-          <h2 className="hero-title">
-            Verify Website<br />
-            <span className="gradient">Authenticity & Info</span>
-          </h2>
-          <p className="hero-subtitle">
-            Enter the website details below to run deep verification checks.
-          </p>
-        </section>
-
-        {/* Input */}
-        <section className="input-section">
-          <div className="input-grid">
-            <div className="input-wrapper main-url">
-              <span className="url-icon">🌐</span>
-              <input
-                id="url-input"
-                className="url-input"
-                type="text"
-                placeholder="Target Website URL (e.g. example.com)"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={loading}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
-
-            <div className="input-wrapper">
-              <span className="url-icon">📧</span>
-              <input
-                className="url-input"
-                type="email"
-                placeholder="Domain Email (e.g. info@example.com)"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div className="input-wrapper">
-              <span className="url-icon">🏷️</span>
-              <input
-                className="url-input"
-                type="text"
-                placeholder="Display Name (Search in Header/Footer)"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div className="input-wrapper">
-              <span className="url-icon">⚖️</span>
-              <input
-                className="url-input"
-                type="text"
-                placeholder="Legal Name (Beside Copyright ©)"
-                value={legalName}
-                onChange={(e) => setLegalName(e.target.value)}
-                disabled={loading}
-              />
-            </div>
+    <>
+      <Background3D />
+      <div className="app glass-app">
+        {/* Header */}
+        <header className="header">
+          <div className="logo-icon">🔍</div>
+          <div className="header-text">
+            <h1>Form Validation</h1>
+            <p>Analyze any website for compliance & key pages</p>
           </div>
+        </header>
 
-          <div style={{ marginTop: '24px', textAlign: 'center' }}>
-            <button
-              id="check-btn"
-              className="check-btn"
-              onClick={handleCheck}
-              disabled={loading || !url.trim()}
-              style={{ padding: '16px 60px', borderRadius: '100px', margin: '0 auto' }}
-            >
-              {loading ? <><div className="btn-spinner" /> Analyzing…</> : <><span>⚡</span> Run Verification</>}
-            </button>
-          </div>
+        {/* Main */}
+        <main className="main-content">
+          {/* Hero */}
+          <section className="hero">
+            <div className="hero-badge">Deep Analysis & Verification</div>
+            <h2 className="hero-title">
+              Verify Website<br />
+              <span className="gradient">Authenticity & Info</span>
+            </h2>
+            <p className="hero-subtitle">
+              Enter the website details below to run deep verification checks.
+            </p>
+          </section>
 
-          {error && (
-            <div className="error-banner" id="error-banner">
-              ⚠️ {error}
-            </div>
-          )}
-        </section>
-
-        {/* Loading */}
-        {loading && (
-          <div className="loading-state">
-            <div className="loading-spinner-large" />
-            <div className="loading-text">Crawling & Verifying…</div>
-            <div className="loading-sub">Checking domains, names, and page content</div>
-          </div>
-        )}
-
-        {/* Results */}
-        {result && !loading && (
-          <section className="results-section" id="results">
-            {/* Summary Card */}
-            <div className="summary-card">
-              <div className="summary-header">
-                <div className="summary-url-info">
-                  <h3>Analyzed URL</h3>
-                  <div className="summary-url">{result.url}</div>
-                </div>
-                <div className={`https-badge ${result.isHttps ? 'secure' : 'insecure'}`}>
-                  {result.isHttps ? '🔒 HTTPS Secure' : '⚠️ Not HTTPS'}
-                </div>
+          {/* Input */}
+          <section className="input-section">
+            <div className="input-grid">
+              <div className="input-wrapper main-url">
+                <span className="url-icon">🌐</span>
+                <input
+                  id="url-input"
+                  className="url-input"
+                  type="text"
+                  placeholder="Target Website URL (e.g. example.com)"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={loading}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
               </div>
 
-              {/* Copyright */}
-              <div className="copyright-info">
-                <span className="copyright-label">Detected © Owner:</span>
-                {result.copyrightName ? (
-                  <span className="copyright-value">{result.copyrightName}</span>
-                ) : (
-                  <span className="copyright-not-found">Not detected on this page</span>
-                )}
+              <div className="input-wrapper">
+                <span className="url-icon">📧</span>
+                <input
+                  className="url-input"
+                  type="email"
+                  placeholder="Domain Email (e.g. info@example.com)"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                />
               </div>
 
-              {/* Score */}
-              {result.mainPageAccessible && (
-                <div className="score-section">
-                  <div className="score-label">
-                    <span>Page Compliance Score</span>
-                    <span style={{ color: scoreInfo.color }}>{scoreInfo.text}</span>
-                  </div>
-                  <div className="score-bar">
-                    <div
-                      className={`score-fill ${scoreClass}`}
-                      style={{ width: `${score}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+              <div className="input-wrapper">
+                <span className="url-icon">🏷️</span>
+                <input
+                  className="url-input"
+                  type="text"
+                  placeholder="Display Name (Search in Header/Footer)"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="input-wrapper">
+                <span className="url-icon">⚖️</span>
+                <input
+                  className="url-input"
+                  type="text"
+                  placeholder="Legal Name (Beside Copyright ©)"
+                  value={legalName}
+                  onChange={(e) => setLegalName(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="input-wrapper">
+                <span className="url-icon">📱</span>
+                <input
+                  className="url-input"
+                  type="tel"
+                  placeholder="WhatsApp Phone Number (with Country Code e.g. +1234567890)"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
             </div>
 
-            {/* Verification Results */}
-            {result.verification && (
-              <>
-                <div className="section-title"><span>Verification Checks</span></div>
-                <div className="verification-grid">
-                  <VerificationCard 
-                    label="Domain Email Match"
-                    icon="📧"
-                    value={email}
-                    isMatch={result.verification.domainEmail.match}
-                    subValue={result.verification.domainEmail.siteDomain ? `Site Domain: ${result.verification.domainEmail.siteDomain}` : null}
-                  />
-                  <VerificationCard 
-                    label="Display Name (Header/Footer)"
-                    icon="🏷️"
-                    value={displayName}
-                    isMatch={result.verification.displayName.match}
-                    subValue={result.verification.displayName.match ? "Found in site boundaries" : "Not found in header or footer"}
-                  />
-                  <VerificationCard 
-                    label="Legal Name (Copyright ©)"
-                    icon="⚖️"
-                    value={legalName}
-                    isMatch={result.verification.legalName.match}
-                    subValue={result.verification.legalName.match ? "Found beside © symbol" : "Not found near copyright notice"}
-                  />
-                </div>
-              </>
-            )}
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <button
+                id="check-btn"
+                className="check-btn"
+                onClick={handleCheck}
+                disabled={loading || !url.trim()}
+                style={{ padding: '16px 60px', borderRadius: '100px', margin: '0 auto' }}
+              >
+                {loading ? <><div className="btn-spinner" /> Analyzing…</> : <><span>⚡</span> Run Verification</>}
+              </button>
+            </div>
 
-            {/* Checks Grid */}
-            <div className="section-title"><span>Standard Page Checks</span></div>
-            {result.mainPageAccessible && result.checks && (
-              <div className="checks-grid">
-                {Object.entries(CHECK_META).map(([key]) => (
-                  <CheckCard
-                    key={key}
-                    checkKey={key}
-                    data={result.checks[key]}
-                  />
-                ))}
+            {error && (
+              <div className="error-banner" id="error-banner" style={{ whiteSpace: 'pre-wrap' }}>
+                ⚠️ {error}
               </div>
             )}
           </section>
-        )}
-      </main>
 
-      <footer className="footer">
-        Website Checker — Built with React &amp; Node.js
-      </footer>
-    </div>
+          {/* Loading */}
+          {loading && (
+            <div className="loading-state">
+              <div className="loading-spinner-large" />
+              <div className="loading-text">Crawling & Verifying…</div>
+              <div className="loading-sub">Checking domains, names, and page content</div>
+            </div>
+          )}
+
+          {/* Results */}
+          {result && !loading && (
+            <section className="results-section" id="results">
+              {/* Summary Card */}
+              <div className="summary-card">
+                <div className="summary-header">
+                  <div className="summary-url-info">
+                    <h3>Analyzed URL</h3>
+                    <div className="summary-url">{result.url}</div>
+                  </div>
+                  <div className={`https-badge ${result.isHttps ? 'secure' : 'insecure'}`}>
+                    {result.isHttps ? '🔒 HTTPS Secure' : '⚠️ Not HTTPS'}
+                  </div>
+                </div>
+
+                {/* Copyright */}
+                <div className="copyright-info">
+                  <span className="copyright-label">Detected © Owner:</span>
+                  {result.copyrightName ? (
+                    <span className="copyright-value">{result.copyrightName}</span>
+                  ) : (
+                    <span className="copyright-not-found">Not detected on this page</span>
+                  )}
+                </div>
+
+                {/* Score */}
+                {result.mainPageAccessible && (
+                  <div className="score-section">
+                    <div className="score-label">
+                      <span>Page Compliance Score</span>
+                      <span style={{ color: scoreInfo.color }}>{scoreInfo.text}</span>
+                    </div>
+                    <div className="score-bar">
+                      <div
+                        className={`score-fill ${scoreClass}`}
+                        style={{ width: `${score}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Verification Results */}
+              {result.verification && (
+                <>
+                  <div className="section-title"><span>Verification Checks</span></div>
+                  <div className="verification-grid">
+                    <VerificationCard
+                      label="Domain Email Match"
+                      icon="📧"
+                      value={email}
+                      isMatch={result.verification.domainEmail.match}
+                      subValue={result.verification.domainEmail.siteDomain ? `Site Domain: ${result.verification.domainEmail.siteDomain}` : null}
+                    />
+                    <VerificationCard
+                      label="Display Name (Header/Footer)"
+                      icon="🏷️"
+                      value={displayName}
+                      isMatch={result.verification.displayName.match}
+                      subValue={result.verification.displayName.match ? "Found in site boundaries" : "Not found in header or footer"}
+                    />
+                    <VerificationCard
+                      label="Legal Name (Copyright ©)"
+                      icon="⚖️"
+                      value={legalName}
+                      isMatch={result.verification.legalName.match}
+                      subValue={result.verification.legalName.match ? "Found beside © symbol" : "Not found near copyright notice"}
+                    />
+                    {phone && result.verification.whatsappActive && (
+                      <VerificationCard
+                        label="WhatsApp Action Link"
+                        icon="💬"
+                        value={phone}
+                        isMatch={true}
+                        subValue={<a href={result.verification.whatsappActive.link} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', pointerEvents: 'auto' }}>Open in WhatsApp Web (wa.me)</a>}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Checks Grid */}
+              <div className="section-title"><span>Standard Page Checks</span></div>
+              {result.mainPageAccessible && result.checks && (
+                <div className="checks-grid">
+                  {Object.entries(CHECK_META).map(([key]) => (
+                    <CheckCard
+                      key={key}
+                      checkKey={key}
+                      data={result.checks[key]}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+        </main>
+
+        <footer className="footer">
+          Emmy Desai
+        </footer>
+      </div>
+    </>
   )
 }
