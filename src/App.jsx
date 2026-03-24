@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Stars } from '@react-three/drei'
 import './index.css'
@@ -56,6 +56,18 @@ const CHECK_META = {
     description: 'Contact Us page found and accessible'
   }
 }
+
+// Sample Account Managers — update this list as needed
+const ACCOUNT_MANAGERS = [
+  { name: 'Dax Desai', email: 'dax@alendei.com' },
+  { name: 'Khush Desai', email: 'khush@alendei.com' },
+  { name: 'Sarthik Chotani', email: 'sarthik@alendei.com' },
+  { name: 'Jignesh Viradiya', email: 'jignesh.viradiya@alendei.com' },
+  { name: 'Anand Parashar', email: 'anand@alendei.com' },
+  { name: 'Darshan Kumar Jain', email: 'darshan@alendei.com' },
+  { name: 'Prinsal Parikh', email: 'prinsal@alendei.com' }
+
+]
 
 function getCheckStatus(key, data) {
   if (!data) return 'fail'
@@ -178,6 +190,28 @@ function VerificationCard({ label, icon, value, isMatch, statusText, subValue })
   )
 }
 
+// ─── No Match Popup ──────────────────────────────────────────────────────────
+function NoMatchPopup({ onClose }) {
+  return (
+    <div className="popup-overlay" onClick={onClose}>
+      <div className="popup-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="popup-icon">💡</div>
+        <h3 className="popup-title">Minor Changes Needed</h3>
+        <p className="popup-message">
+          Koi bada issue nahi hai! Bas kuch chote changes karne ki zarurat hai.
+          Report ko dhyan se review karein aur highlighted items ko fix kar dein.
+        </p>
+        <p className="popup-sub">
+          These are small adjustments — nothing critical. Review the flagged items and make the necessary updates.
+        </p>
+        <button className="popup-close-btn" onClick={onClose}>
+          Got it ✓
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [url, setUrl] = useState('')
   const [email, setEmail] = useState('')
@@ -189,15 +223,28 @@ export default function App() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
 
+  // No Match Popup
+  const [showNoMatchPopup, setShowNoMatchPopup] = useState(false)
+
+  // Send to AM
+  const [showAMDropdown, setShowAMDropdown] = useState(false)
+  const [selectedAM, setSelectedAM] = useState(null)
+  const [sending, setSending] = useState(false)
+  const [sendStatus, setSendStatus] = useState(null) // { type: 'success'|'error', message }
+
   const handleCheck = async () => {
     if (!url.trim()) return
 
     setLoading(true)
     setError(null)
     setResult(null)
+    setShowNoMatchPopup(false)
+    setShowAMDropdown(false)
+    setSelectedAM(null)
+    setSendStatus(null)
 
     try {
-      const resp = await fetch('https://website-checker-backend-rv7b.onrender.com/api/waba-check', {
+      const resp = await fetch('http://localhost:5000/api/waba-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -234,8 +281,58 @@ export default function App() {
     }
   }
 
+  // Check for "No Match" in verification results and show popup
+  useEffect(() => {
+    if (!result || !result.verification) return
+    const v = result.verification
+    const hasNoMatch =
+      (v.domainEmail && !v.domainEmail.match) ||
+      (v.displayName && !v.displayName.match) ||
+      (v.legalName && !v.legalName.match)
+    if (hasNoMatch) {
+      setShowNoMatchPopup(true)
+    }
+  }, [result])
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleCheck()
+  }
+
+  const handleSendToAM = async () => {
+    if (!selectedAM || !result) return
+    setSending(true)
+    setSendStatus(null)
+
+    try {
+      const score = result.checks ? getScore(result.checks) : 0
+      const resp = await fetch('http://localhost:5000/api/send-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amEmail: selectedAM.email,
+          amName: selectedAM.name,
+          reportData: {
+            url: result.url,
+            isHttps: result.isHttps,
+            copyrightName: result.copyrightName,
+            score,
+            checks: result.checks,
+            verification: result.verification
+          }
+        })
+      })
+
+      const data = await resp.json()
+      if (resp.ok) {
+        setSendStatus({ type: 'success', message: `Report sent to ${selectedAM.name} (${selectedAM.email})` })
+      } else {
+        setSendStatus({ type: 'error', message: data.error || 'Failed to send report' })
+      }
+    } catch (err) {
+      setSendStatus({ type: 'error', message: 'Failed to connect to server' })
+    } finally {
+      setSending(false)
+    }
   }
 
   const score = result?.checks ? getScore(result.checks) : 0
@@ -246,6 +343,9 @@ export default function App() {
     <>
       <Background3D />
       <div className="app glass-app">
+        {/* No Match Popup */}
+        {showNoMatchPopup && <NoMatchPopup onClose={() => setShowNoMatchPopup(false)} />}
+
         {/* Header */}
         <header className="header">
           <div className="logo-icon">🔍</div>
@@ -459,12 +559,68 @@ export default function App() {
                   ))}
                 </div>
               )}
+
+              {/* ─── Send to Account Manager ─────────────────────────────── */}
+              <div className="send-am-section">
+                {!showAMDropdown ? (
+                  <button
+                    className="send-am-btn"
+                    onClick={() => { setShowAMDropdown(true); setSendStatus(null); }}
+                  >
+                    📤 Send to Account Manager
+                  </button>
+                ) : (
+                  <div className="am-dropdown-container">
+                    <div className="am-dropdown-header">
+                      <span>👤 Select Account Manager</span>
+                      <button className="am-close-btn" onClick={() => { setShowAMDropdown(false); setSelectedAM(null); setSendStatus(null); }}>✕</button>
+                    </div>
+
+                    <div className="am-list">
+                      {ACCOUNT_MANAGERS.map((am) => (
+                        <div
+                          key={am.email}
+                          className={`am-option ${selectedAM?.email === am.email ? 'selected' : ''}`}
+                          onClick={() => setSelectedAM(am)}
+                        >
+                          <div className="am-avatar">{am.name.charAt(0)}</div>
+                          <div className="am-details">
+                            <div className="am-name">{am.name}</div>
+                            <div className="am-email">{am.email}</div>
+                          </div>
+                          {selectedAM?.email === am.email && <span className="am-check">✓</span>}
+                        </div>
+                      ))}
+                    </div>
+
+                    {selectedAM && (
+                      <button
+                        className="send-btn"
+                        onClick={handleSendToAM}
+                        disabled={sending}
+                      >
+                        {sending ? (
+                          <><div className="btn-spinner" /> Sending…</>
+                        ) : (
+                          <>📧 Send Report to {selectedAM.name}</>
+                        )}
+                      </button>
+                    )}
+
+                    {sendStatus && (
+                      <div className={`send-status ${sendStatus.type}`}>
+                        {sendStatus.type === 'success' ? '✅' : '❌'} {sendStatus.message}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </section>
           )}
         </main>
 
         <footer className="footer">
-          Emmy Desai
+          ©2026 Emmy Desai. All Rights Reserved.
         </footer>
       </div>
     </>
