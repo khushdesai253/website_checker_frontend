@@ -244,7 +244,7 @@ export default function App() {
     setSendStatus(null)
 
     try {
-      const resp = await fetch('http://localhost:5000/api/waba-check', {
+      const resp = await fetch('https://website-checker-frontend-d552.vercel.app/api/waba-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
