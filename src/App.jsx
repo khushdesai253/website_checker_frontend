@@ -305,7 +305,7 @@ export default function App() {
 
     try {
       const score = result.checks ? getScore(result.checks) : 0
-      const resp = await fetch('http://localhost:5000/api/send-report', {
+      const resp = await fetch('https://website-checker-backend-rv7b.onrender.com/api/send-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
