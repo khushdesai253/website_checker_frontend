@@ -1009,6 +1009,192 @@ body::before {
   color: var(--accent-red);
 }
 
+/* ─── Lead Capture Popup ─────────────────────────────────────────────────── */
+.lead-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+.lead-popup-modal {
+  background: rgba(17, 24, 39, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 44px 40px;
+  max-width: 480px;
+  width: 92%;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(99, 102, 241, 0.08);
+  animation: slideUp 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.lead-popup-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
+}
+
+.lead-popup-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.lead-popup-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.lead-popup-header h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.lead-popup-header p {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.lead-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lead-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.lead-required {
+  color: var(--accent-red);
+}
+
+.lead-field input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.lead-field input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.lead-field input:focus {
+  border-color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.04);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.lead-field input:disabled {
+  opacity: 0.6;
+}
+
+.lead-error {
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.lead-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  margin-top: 6px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border: none;
+  border-radius: 100px;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.lead-submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transition: left 0.4s;
+}
+
+.lead-submit-btn:hover::before {
+  left: 100%;
+}
+
+.lead-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.45);
+}
+
+.lead-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.lead-success {
+  text-align: center;
+  padding: 20px 0;
+  animation: fadeInUp 0.4s ease;
+}
+
+.lead-success-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+
+.lead-success h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-green);
+  margin-bottom: 8px;
+}
+
+.lead-success p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .header { padding: 16px 20px; }

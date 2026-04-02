@@ -3,6 +3,9 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Stars } from '@react-three/drei'
 import './index.css'
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+
 function AnimatedStars() {
   const ref = useRef()
 
@@ -125,6 +128,7 @@ function CheckCard({ name, data, checkKey }) {
 
   const iconBg = status === 'pass' ? 'green' : status === 'warning' ? 'orange' : 'red'
 
+
   return (
     <div className={`check-card ${status}`}>
       <div className="check-header">
@@ -212,6 +216,141 @@ function NoMatchPopup({ onClose }) {
   )
 }
 
+// ─── Lead Capture Popup ──────────────────────────────────────────────────────
+function LeadCapturePopup({ onComplete }) {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState(null)
+  const [formSuccess, setFormSuccess] = useState(false)
+
+  const handleChange = (field) => (e) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }))
+    setFormError(null)
+  }
+
+  const isValid =
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
+    formData.email.trim() &&
+    formData.phone.trim()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!isValid) return
+
+    setSubmitting(true)
+    setFormError(null)
+
+    try {
+      const resp = await fetch(`${BASE_URL}/api/capture-lead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await resp.json()
+
+      if (!resp.ok) {
+        throw new Error(data.error || 'Failed to submit')
+      }
+
+      setFormSuccess(true)
+      localStorage.setItem('leadCaptured', 'true')
+      setTimeout(() => onComplete(), 1500)
+    } catch (err) {
+      setFormError(err.message || 'Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="lead-popup-overlay">
+      <div className="lead-popup-modal" onClick={(e) => e.stopPropagation()}>
+        {formSuccess ? (
+          <div className="lead-success">
+            <div className="lead-success-icon">✅</div>
+            <h3>Thank You!</h3>
+            <p>Your details have been submitted successfully.</p>
+          </div>
+        ) : (
+          <>
+            <div className="lead-popup-header">
+              <div className="lead-popup-icon">👋</div>
+              <h3>Welcome!</h3>
+              <p>Please enter your details to continue</p>
+            </div>
+            <form className="lead-form" onSubmit={handleSubmit}>
+              <div className="lead-field">
+                <label>First Name <span className="lead-required">*</span></label>
+                <input
+                  type="text"
+                  placeholder="Enter your first name"
+                  value={formData.firstName}
+                  onChange={handleChange('firstName')}
+                  disabled={submitting}
+                  autoFocus
+                />
+              </div>
+              <div className="lead-field">
+                <label>Last Name <span className="lead-required">*</span></label>
+                <input
+                  type="text"
+                  placeholder="Enter your last name"
+                  value={formData.lastName}
+                  onChange={handleChange('lastName')}
+                  disabled={submitting}
+                />
+              </div>
+              <div className="lead-field">
+                <label>Email <span className="lead-required">*</span></label>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={formData.email}
+                  onChange={handleChange('email')}
+                  disabled={submitting}
+                />
+              </div>
+              <div className="lead-field">
+                <label>Phone Number <span className="lead-required">*</span></label>
+                <input
+                  type="tel"
+                  placeholder="+91 9876543210"
+                  value={formData.phone}
+                  onChange={handleChange('phone')}
+                  disabled={submitting}
+                />
+              </div>
+
+              {formError && (
+                <div className="lead-error">⚠️ {formError}</div>
+              )}
+
+              <button
+                type="submit"
+                className="lead-submit-btn"
+                disabled={submitting || !isValid}
+              >
+                {submitting ? (
+                  <><div className="btn-spinner" /> Submitting…</>
+                ) : (
+                  <>🚀 Continue</>
+                )}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [url, setUrl] = useState('')
   const [email, setEmail] = useState('')
@@ -222,6 +361,11 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+
+  // Lead Capture Popup — show only if not previously captured
+  const [showLeadPopup, setShowLeadPopup] = useState(
+    () => !localStorage.getItem('leadCaptured')
+  )
 
   // No Match Popup
   const [showNoMatchPopup, setShowNoMatchPopup] = useState(false)
@@ -244,7 +388,7 @@ export default function App() {
     setSendStatus(null)
 
     try {
-      const resp = await fetch('https://website-checker-backend-rv7b.onrender.com/api/waba-check', {
+      const resp = await fetch(`${BASE_URL}/api/waba-check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -305,7 +449,7 @@ export default function App() {
 
     try {
       const score = result.checks ? getScore(result.checks) : 0
-      const resp = await fetch('https://website-checker-backend-rv7b.onrender.com/api/send-report', {
+      const resp = await fetch('http://localhost:5000/api/send-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -343,6 +487,9 @@ export default function App() {
     <>
       <Background3D />
       <div className="app glass-app">
+        {/* Lead Capture Popup */}
+        {showLeadPopup && <LeadCapturePopup onComplete={() => setShowLeadPopup(false)} />}
+
         {/* No Match Popup */}
         {showNoMatchPopup && <NoMatchPopup onClose={() => setShowNoMatchPopup(false)} />}
 
